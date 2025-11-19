@@ -1,0 +1,400 @@
+version: '3.8'
+
+# Mutopia - Universal Music Platform Integration via Canimus
+# Single-command deployment: docker compose up
+
+services:
+  # ============================================================================
+  # CONTENT SOURCES (Canimus Feed Producers)
+  # ============================================================================
+
+  # Sanora - Sharon test server serving Canimus feed
+  sanora:
+    container_name: mutopia-sanora
+    build:
+      context: ./services/sanora
+      dockerfile: Dockerfile
+    ports:
+      - "9090:9090"
+    volumes:
+      # Mount sharon test content
+      - ../sharon/tests/sanora:/app
+    networks:
+      - mutopia-network
+    command: node serve-store.js book-album-blog --port 9090
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/feeds/canimus-feed.json"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Faircamp - Static site generator for audio producers
+  faircamp:
+    container_name: mutopia-faircamp
+    image: nginx:alpine
+    ports:
+      - "8000:80"
+    volumes:
+      # Mount faircamp output directory as nginx root
+      - faircamp-output:/usr/share/nginx/html:ro
+    networks:
+      - mutopia-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Dolores - Audio player (static files)
+  dolores:
+    container_name: mutopia-dolores
+    image: nginx:alpine
+    ports:
+      - "5118:80"
+    volumes:
+      # Mount dolores public directory as nginx root
+      - ../dolores/public:/usr/share/nginx/html:ro
+    networks:
+      - mutopia-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/audio-player.html"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Mixtape Creator - Product website for creating mixtapes with payment splits
+  mixtape-creator:
+    container_name: mutopia-mixtape-creator
+    image: nginx:alpine
+    ports:
+      - "3003:80"
+    volumes:
+      # Mount mixtape creator as nginx root
+      - ./mixtape-creator:/usr/share/nginx/html:ro
+    networks:
+      - mutopia-network
+    depends_on:
+      - sanora
+      - mirlo-api
+      - jam-coop
+      - addie
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ============================================================================
+  # ALLYABASE STACK (Authentication, Payments, Profiles)
+  # ============================================================================
+
+  # Continuebee - Authentication service
+  continuebee:
+    container_name: mutopia-continuebee
+    image: node:20-alpine
+    working_dir: /app
+    ports:
+      - "5112:5112"
+    volumes:
+      - ../allyabase/deployment/continuebee/src/server/node:/app
+    networks:
+      - mutopia-network
+    command: node continuebee.js
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5112/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Prof - Profile/PII service
+  prof:
+    container_name: mutopia-prof
+    image: node:20-alpine
+    working_dir: /app
+    ports:
+      - "5108:5108"
+    volumes:
+      - ../allyabase/deployment/prof/src/server/node:/app
+      - prof-data:/app/data
+    networks:
+      - mutopia-network
+    depends_on:
+      - continuebee
+    command: node prof.js
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5108/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Addie - Payment processing service
+  addie:
+    container_name: mutopia-addie
+    image: node:20-alpine
+    working_dir: /app
+    ports:
+      - "3004:3005"
+    environment:
+      STRIPE_PUBLISHABLE_KEY: pk_test_REDACTED
+      STRIPE_KEY: sk_test_REDACTED
+      PROF_URL: http://prof:5108
+      CONTINUEBEE_URL: http://continuebee:5112
+      LOCALHOST: "true"
+      # Disable Fount/BDO bootstrap for Mutopia (standalone mode)
+      SKIP_BOOTSTRAP: "true"
+    volumes:
+      - ../addie/src/server/node:/app
+      - addie-data:/app/data
+    networks:
+      - mutopia-network
+    depends_on:
+      - prof
+      - continuebee
+    command: node addie.js
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3005/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ============================================================================
+  # MIRLO STACK (Canimus Consumer)
+  # ============================================================================
+
+  # PostgreSQL database for Mirlo
+  mirlo-db:
+    container_name: mutopia-mirlo-db
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: mirlo
+      POSTGRES_PASSWORD: mirlo
+      POSTGRES_DB: mirlo
+    volumes:
+      - mirlo-db-data:/var/lib/postgresql/data
+    networks:
+      - mutopia-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "mirlo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for Mirlo background jobs
+  mirlo-redis:
+    container_name: mutopia-mirlo-redis
+    image: redis:alpine
+    command: redis-server --requirepass mirlo
+    networks:
+      - mutopia-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO for Mirlo media storage
+  mirlo-minio:
+    container_name: mutopia-mirlo-minio
+    image: minio/minio
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    environment:
+      MINIO_ROOT_USER: mirlo
+      MINIO_ROOT_PASSWORD: mirlopassword
+    volumes:
+      - mirlo-minio-data:/data
+    networks:
+      - mutopia-network
+    command: server --console-address ":9001" /data
+
+  # Mirlo API
+  mirlo-api:
+    container_name: mutopia-mirlo-api
+    build:
+      context: ../third-party/mirlo
+      dockerfile: Dockerfile
+      target: api
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://mirlo:mirlo@mirlo-db:5432/mirlo
+      REDIS_HOST: mirlo-redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: mirlo
+      MINIO_HOST: mirlo-minio
+      MINIO_PORT: 9000
+      MINIO_ROOT_USER: mirlo
+      MINIO_ROOT_PASSWORD: mirlopassword
+      JWT_SECRET: mutopia_development_jwt_secret_change_in_production
+      # Allyabase integration (containerized services)
+      PROF_URL: http://prof:5108
+      SANORA_URL: http://sanora:9090
+      CONTINUEBEE_URL: http://continuebee:5112
+      # Canimus feed integration
+      CANIMUS_FEED_URLS: http://sanora:9090/feeds/canimus-feed.json,http://faircamp:8000/canimus.json,https://sockpuppet.band/canimus.json,http://jam-coop:3000/feeds/canimus-feed.json,http://host.docker.internal:8001/canimus-feed.json
+    ports:
+      - "3001:3000"
+    volumes:
+      # Watch mode - sync source code changes
+      - ../third-party/mirlo/src:/var/www/api/src
+      - ../third-party/mirlo/emails:/var/www/api/emails
+      # Media storage
+      - mirlo-media-incoming:/data/media/incoming
+      - mirlo-media-cache:/data/media/downloadCache
+    depends_on:
+      - mirlo-db
+      - mirlo-redis
+      - mirlo-minio
+    networks:
+      - mutopia-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Mirlo Background Worker
+  mirlo-background:
+    container_name: mutopia-mirlo-background
+    build:
+      context: ../third-party/mirlo
+      dockerfile: Dockerfile
+      target: background
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://mirlo:mirlo@mirlo-db:5432/mirlo
+      REDIS_HOST: mirlo-redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: mirlo
+      MINIO_HOST: mirlo-minio
+      MINIO_PORT: 9000
+      MINIO_ROOT_USER: mirlo
+      MINIO_ROOT_PASSWORD: mirlopassword
+    volumes:
+      - ../third-party/mirlo/src:/var/www/api/src
+      - ../third-party/mirlo/emails:/var/www/api/emails
+      - mirlo-media-processing:/data/media/processing
+    depends_on:
+      - mirlo-db
+      - mirlo-redis
+      - mirlo-minio
+      - mirlo-api
+    networks:
+      - mutopia-network
+
+  # Mirlo Client (React frontend)
+  mirlo-client:
+    container_name: mutopia-mirlo-client
+    build:
+      context: ../third-party/mirlo/client
+      dockerfile: Dockerfile
+    environment:
+      VITE_API_DOMAIN: http://localhost:3001
+      VITE_CLIENT_DOMAIN: localhost:3000
+    ports:
+      - "3000:8080"
+    volumes:
+      - ../third-party/mirlo/client/src:/app/src
+      - ../third-party/mirlo/client/public:/app/public
+    depends_on:
+      - mirlo-api
+    networks:
+      - mutopia-network
+
+  # ============================================================================
+  # JAM.COOP STACK (Canimus Consumer - Future Integration)
+  # ============================================================================
+
+  # PostgreSQL database for Jam.coop
+  jam-db:
+    container_name: mutopia-jam-db
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: jamcoop
+      POSTGRES_PASSWORD: jamcoop
+      POSTGRES_DB: jamcoop
+    volumes:
+      - jam-db-data:/var/lib/postgresql/data
+    networks:
+      - mutopia-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "jamcoop"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Jam.coop Rails application
+  jam-coop:
+    container_name: mutopia-jam-coop
+    build:
+      context: ../third-party/jam-coop
+    environment:
+      RAILS_ENV: development
+      DATABASE_URL: postgresql://jamcoop:jamcoop@jam-db:5432/jamcoop
+      SECRET_KEY_BASE: development_secret_key_base_replace_in_production
+      RAILS_MASTER_KEY: ${JAM_COOP_MASTER_KEY:-}
+      POSTMARK_API_KEY: development_postmark_key_not_used
+      POSTMARK_WEBHOOKS_TOKEN: development_webhooks_token_not_used
+      STRIPE_SECRET_KEY: sk_test_development_key_not_used
+      STRIPE_PUBLISHABLE_KEY: pk_test_development_key_not_used
+      STRIPE_ENDPOINT_SECRET: whsec_development_endpoint_secret_not_used
+      AWS_ACCESS_KEY_ID: development_aws_key_not_used
+      AWS_SECRET_ACCESS_KEY: development_aws_secret_not_used
+      AWS_REGION: us-east-1
+      AWS_BUCKET_NAME: jam-coop-development
+      ROLLBAR_ACCESS_TOKEN: development_rollbar_token_not_used
+      ROLLBAR_POST_CLIENT_ITEM_ACCESS_TOKEN: development_rollbar_client_token_not_used
+      CLOUDFLARE_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+      CLOUDFLARE_TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
+      USE_POSTMARK_IN_DEVELOPMENT: "false"
+      # Base URL for browser-accessible links (host machine, not container)
+      BASE_URL: http://localhost:3002
+      CDN_BASE_URL: http://localhost:3002
+      # Canimus feed integration
+      CANIMUS_FEED_URLS: http://sanora:9090/feeds/canimus-feed.json,http://faircamp:8000/canimus.json,https://sockpuppet.band/canimus.json
+    ports:
+      - "3002:3000"
+    volumes:
+      # Watch mode - sync source code changes
+      - ../third-party/jam-coop:/app
+      # Persistent storage for uploads
+      - jam-storage:/app/storage
+    depends_on:
+      - jam-db
+      - sanora
+      - faircamp
+    networks:
+      - mutopia-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    command: >
+      sh -c "
+        rm -f /app/tmp/pids/server.pid &&
+        bundle exec rails db:create db:migrate &&
+        bundle exec rails server -b 0.0.0.0
+      "
+
+# ============================================================================
+# NETWORKS & VOLUMES
+# ============================================================================
+
+networks:
+  mutopia-network:
+    driver: bridge
+
+volumes:
+  mirlo-db-data:
+  mirlo-minio-data:
+  mirlo-media-incoming:
+  mirlo-media-cache:
+  mirlo-media-processing:
+  faircamp-output:
+  jam-db-data:
+  jam-storage:
+  prof-data:
+  addie-data:

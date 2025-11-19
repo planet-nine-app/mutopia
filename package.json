@@ -1,0 +1,15 @@
+{
+  "name": "mutopia-seed",
+  "version": "1.0.0",
+  "description": "Test artist seeding for Mutopia payment splits",
+  "type": "module",
+  "scripts": {
+    "seed": "node seed-artists.js",
+    "seed-platforms": "node seed-platforms.js",
+    "test-split": "node test-split-payment.js"
+  },
+  "dependencies": {
+    "sessionless-node": "latest",
+    "node-fetch": "^3.3.2"
+  }
+}

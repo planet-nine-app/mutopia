@@ -1,0 +1,64 @@
+{
+  "type": "feed",
+  "name": "Mutopia Test Feed",
+  "url": "http://localhost:8001",
+  "links": [
+    {
+      "rel": "self",
+      "href": "http://localhost:8001/canimus-feed.json"
+    }
+  ],
+  "children": [
+    {
+      "type": "artist",
+      "name": "Test Artist",
+      "url": "http://localhost:8001/test-artist",
+      "bio": "A test artist for Mutopia demo",
+      "children": [
+        {
+          "type": "album",
+          "name": "Test Album",
+          "release-date": "2025-01-01",
+          "description": "A test album with sample tracks",
+          "url": "http://localhost:8001/test-artist/test-album",
+          "images": {
+            "cover": {
+              "src": "http://localhost:8001/images/album-cover.jpg",
+              "width": 300,
+              "height": 300
+            }
+          },
+          "children": [
+            {
+              "type": "track",
+              "name": "Track One",
+              "Artist": "Test Artist",
+              "Album": "Test Album",
+              "track": 1,
+              "url": "http://localhost:8001/test-artist/test-album",
+              "duration": 180
+            },
+            {
+              "type": "track",
+              "name": "Track Two",
+              "Artist": "Test Artist",
+              "Album": "Test Album",
+              "track": 2,
+              "url": "http://localhost:8001/test-artist/test-album",
+              "duration": 210
+            },
+            {
+              "type": "track",
+              "name": "Track Three",
+              "Artist": "Test Artist",
+              "Album": "Test Album",
+              "track": 3,
+              "url": "http://localhost:8001/test-artist/test-album",
+              "duration": 195
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

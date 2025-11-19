@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mutopia Mixtape Creator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 Mutopia Mixtape Creator</h1>
+            <p>Create custom mixtapes from Mirlo, Jam.coop, and Allyabase. $5 per mixtape, split between all artists.</p>
+        </header>
+
+        <div class="main-layout">
+            <!-- Left: Track Browser -->
+            <section class="track-browser">
+                <h2>Browse Tracks</h2>
+
+                <div class="source-tabs">
+                    <button class="tab-btn active" data-source="mirlo">Mirlo</button>
+                    <button class="tab-btn" data-source="jam">Jam.coop</button>
+                    <button class="tab-btn" data-source="sanora">Sanora</button>
+                </div>
+
+                <div class="search-box">
+                    <input type="text" id="search" placeholder="Search tracks...">
+                </div>
+
+                <div id="loading" class="loading">Loading tracks...</div>
+                <div id="error" class="error" style="display: none;"></div>
+
+                <div id="track-list" class="track-list">
+                    <!-- Tracks will be populated here -->
+                </div>
+            </section>
+
+            <!-- Right: Mixtape -->
+            <section class="mixtape">
+                <h2>Your Mixtape (<span id="track-count">0</span> tracks)</h2>
+
+                <div id="mixtape-list" class="mixtape-list">
+                    <p class="empty-state">Add tracks to start building your mixtape!</p>
+                </div>
+
+                <div class="mixtape-footer">
+                    <div class="price-info">
+                        <p>Total: <strong>$5.00</strong></p>
+                        <p class="split-info" id="split-info">Split between <span id="artist-count">0</span> artists</p>
+                    </div>
+                    <button id="checkout-btn" class="checkout-btn" disabled>
+                        Checkout with Stripe
+                    </button>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="checkout-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Complete Your Purchase</h2>
+
+            <div id="payment-form">
+                <div class="payment-summary">
+                    <p><strong>Mixtape with <span id="modal-track-count">0</span> tracks</strong></p>
+                    <p>Total: <strong>$5.00</strong></p>
+                    <p class="artists-list" id="modal-artists">Artists: ...</p>
+                </div>
+
+                <div id="card-element" class="card-element"></div>
+                <div id="card-errors" class="card-errors"></div>
+
+                <button id="submit-payment" class="submit-payment-btn">
+                    Pay $5.00
+                </button>
+            </div>
+
+            <div id="payment-success" style="display: none;">
+                <div class="success-message">
+                    <h3>✅ Payment Successful!</h3>
+                    <p>Your mixtape purchase is complete. Funds have been split between all artists.</p>
+                    <button onclick="window.location.reload()">Create Another Mixtape</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="app.js"></script>
+</body>
+</html>

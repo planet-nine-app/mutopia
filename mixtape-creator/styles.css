@@ -1,0 +1,404 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+header {
+    text-align: center;
+    color: white;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.main-layout {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 20px;
+}
+
+@media (max-width: 1024px) {
+    .main-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Track Browser */
+.track-browser {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.track-browser h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.source-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: #f0f0f0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.tab-btn:hover {
+    background: #e0e0e0;
+}
+
+.tab-btn.active {
+    background: #667eea;
+    color: white;
+}
+
+.search-box {
+    margin-bottom: 20px;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.track-list {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.track-item {
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s;
+}
+
+.track-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.track-info {
+    flex: 1;
+}
+
+.track-title {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.track-artist {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.track-source {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    margin-top: 4px;
+}
+
+.add-btn {
+    padding: 8px 16px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.add-btn:hover {
+    background: #5568d3;
+}
+
+.add-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* Mixtape */
+.mixtape {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 20px;
+}
+
+.mixtape h2 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.mixtape-list {
+    flex: 1;
+    max-height: 500px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+
+.empty-state {
+    text-align: center;
+    color: #999;
+    padding: 40px 20px;
+}
+
+.mixtape-item {
+    padding: 12px;
+    background: #f8f8f8;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mixtape-item-info {
+    flex: 1;
+}
+
+.mixtape-item-title {
+    font-weight: bold;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.mixtape-item-artist {
+    color: #666;
+    font-size: 0.8rem;
+}
+
+.mixtape-source {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #e8eaf6;
+    color: #667eea;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    margin-left: 6px;
+    font-weight: 500;
+}
+
+.remove-btn {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 4px 8px;
+}
+
+.remove-btn:hover {
+    color: #e74c3c;
+}
+
+.mixtape-footer {
+    border-top: 2px solid #e0e0e0;
+    padding-top: 20px;
+}
+
+.price-info {
+    margin-bottom: 15px;
+}
+
+.price-info p {
+    margin-bottom: 5px;
+}
+
+.split-info {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.checkout-btn {
+    width: 100%;
+    padding: 15px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.checkout-btn:hover:not(:disabled) {
+    background: #229954;
+}
+
+.checkout-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #aaa;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #000;
+}
+
+.payment-summary {
+    background: #f8f8f8;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.payment-summary p {
+    margin-bottom: 8px;
+}
+
+.artists-list {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.card-element {
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.card-errors {
+    color: #e74c3c;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+}
+
+.submit-payment-btn {
+    width: 100%;
+    padding: 15px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.submit-payment-btn:hover {
+    background: #229954;
+}
+
+.submit-payment-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.success-message {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.success-message h3 {
+    color: #27ae60;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+}
+
+.success-message button {
+    margin-top: 20px;
+    padding: 12px 24px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.error {
+    background: #fee;
+    color: #c33;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}

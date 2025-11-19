@@ -1,0 +1,35 @@
+# Environment
+.env
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+temp/
+
+# Artist seeding (contains private keys - never commit!)
+test-artists.json
+mixtape-creator/test-artists.json
+
+# Platform payment setup (contains private keys - never commit!)
+test-platforms.json
+test-payments.json
+
+# Dependencies
+node_modules/
+package-lock.json
